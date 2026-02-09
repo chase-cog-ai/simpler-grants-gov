@@ -24,6 +24,15 @@ test.describe("happy path apply workflow - Organization User (SF424B and SF-LLL)
     await page.waitForLoadState("domcontentloaded");
     await page.waitForTimeout(2000);
 
+    // If a local test JWT is available, use it to log in directly
+    if (process.env.TEST_JWT) {
+      await page.request.post(`${BASE_URL}/api/user/local-quick-login`, {
+        data: { jwt: process.env.TEST_JWT },
+      });
+      await page.reload();
+      await page.waitForLoadState("domcontentloaded");
+    }
+
     // Step 2: Use the test user dropdown to log in
     const testUserSelect = page.locator(
       'select[id*="test-user"], select[aria-label*="test-user"], combobox[aria-label*="test"]',
@@ -32,8 +41,22 @@ test.describe("happy path apply workflow - Organization User (SF424B and SF-LLL)
       await testUserSelect
         .first()
         .waitFor({ state: "visible", timeout: 10000 });
-      await testUserSelect.first().selectOption("many_app_user");
-      await page.waitForTimeout(2000);
+      const options = await testUserSelect
+        .first()
+        .locator("option")
+        .all();
+      const optionValues: string[] = [];
+      for (const option of options) {
+        const value = await option.getAttribute("value");
+        if (value && value.trim().length > 0) {
+          optionValues.push(value);
+        }
+      }
+      if (optionValues.length > 0) {
+        await testUserSelect.first().selectOption(optionValues[0]);
+        await page.waitForTimeout(2000);
+        await page.waitForLoadState("domcontentloaded");
+      }
     }
 
     // Step 3: Navigate to opportunity page
@@ -50,10 +73,12 @@ test.describe("happy path apply workflow - Organization User (SF424B and SF-LLL)
     await page.waitForTimeout(2000);
 
     // Step 5: Wait for the Start Application modal to appear
-    const modal = page.locator(
-      '[role="dialog"].is-visible, #start-application.is-visible',
-    );
+    const loginModal = page.locator("#application-login-modal.is-visible");
+    const modal = page.locator("#start-application.is-visible");
     await modal.waitFor({ state: "visible", timeout: 15000 });
+    if (await loginModal.isVisible()) {
+      throw new Error("Login modal appeared; user is not authenticated.");
+    }
     // Debug: capture modal HTML and screenshot before expect (only if visible)
     if (await modal.isVisible()) {
       await modal.screenshot({ path: "modal-before-select.png" });
