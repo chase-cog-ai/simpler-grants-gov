@@ -3,13 +3,9 @@ import { expect, test } from "@playwright/test";
 import dotenv from "dotenv";
 
 
+
 // Only run this test in Chrome in CI
 test.describe('happy path apply workflow - Organization User (SF424B and SF-LLL)', () => {
-  test.beforeAll(async ({}, testInfo) => {
-    const isCI = process.env.CI === "true";
-    const isChrome = testInfo.project.name === "Chrome";
-    test.skip(!(isCI && isChrome), "This test runs only in Chrome on CI");
-  });
 
 dotenv.config({ path: path.resolve(__dirname, "../../../.env.local") });
 
@@ -17,9 +13,11 @@ const OPPORTUNITY_ID = "f7a1c2b3-4d5e-6789-8abc-1234567890ab"; // TEST-BR-8037-O
 const BASE_URL = "http://localhost:3000";
 const OPPORTUNITY_URL = `${BASE_URL}/opportunity/${OPPORTUNITY_ID}`;
 
-test("happy path apply workflow - Organization User (SF424B and SF-LLL)", async ({
-  page,
-}) => {
+test("happy path apply workflow - Organization User (SF424B and SF-LLL)", async ({ page }, testInfo) => {
+  test.skip(
+    process.env.CI === "true" && testInfo.project.name !== "Chrome",
+    "This test runs only in Chrome on CI"
+  );
   test.setTimeout(300000);
 
   // Step 1: Navigate to home page
@@ -54,6 +52,14 @@ test("happy path apply workflow - Organization User (SF424B and SF-LLL)", async 
   const modal = page.locator(
     '[role="dialog"].is-visible, #start-application.is-visible',
   );
+  // Debug: capture modal HTML and screenshot before expect
+  await modal.screenshot({ path: `modal-before-select.png` });
+  const modalHtml = await modal.innerHTML().catch(() => 'Could not get modal HTML');
+  const selectCount = await modal.locator('select').count();
+  if (selectCount === 0) {
+    console.error('Modal HTML when <select> not found:', modalHtml);
+    throw new Error('No <select> found in modal. See modal-before-select.png for details.');
+  }
   await expect(modal.locator("select")).toBeVisible({ timeout: 15000 });
 
   // Step 6: Fill required fields in Start Application modal
