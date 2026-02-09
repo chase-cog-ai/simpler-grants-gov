@@ -5,7 +5,7 @@ import dotenv from "dotenv";
 
 // Only run this test in Chrome in CI
 test.describe('happy path apply workflow - Organization User (SF424B and SF-LLL)', () => {
-  test.beforeAll((testInfo) => {
+  test.beforeAll(async ({}, testInfo) => {
     const isCI = process.env.CI === "true";
     const isChrome = testInfo.project.name === "Chrome";
     test.skip(!(isCI && isChrome), "This test runs only in Chrome on CI");
@@ -220,5 +220,4 @@ test("happy path apply workflow - Organization User (SF424B and SF-LLL)", async 
     /Application ID #: [0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i,
   );
 });
-// Close the test.describe block
-}
+});
