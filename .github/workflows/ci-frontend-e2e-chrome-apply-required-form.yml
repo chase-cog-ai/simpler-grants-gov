@@ -4,7 +4,7 @@ on:
   workflow_call:
   pull_request:
     paths:
-      - frontend/tests/e2e/apply/happy-path-apply-req-form-workflow.spec.ts
+      - frontend/**
       - .github/workflows/ci-frontend-e2e-chrome-apply-required-form.yml
 
 defaults:
@@ -81,7 +81,7 @@ jobs:
         env:
           CI: true
         run: |
-          npx playwright test --config ./tests/playwright.config.ts --project=Chrome tests/e2e/apply/happy-path-apply-req-form-workflow.spec.ts
+          npm run test:e2e -- --project=Chrome tests/e2e/apply/happy-path-apply-req-form-workflow.spec.ts
 
       - name: Debug logging on failure
         if: failure()
