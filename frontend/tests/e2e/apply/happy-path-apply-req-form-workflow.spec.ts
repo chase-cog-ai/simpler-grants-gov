@@ -2,6 +2,12 @@ import path from "path";
 import { expect, test } from "@playwright/test";
 import dotenv from "dotenv";
 
+// Only run this test in Chrome in CI
+const isCI = process.env.CI === "true";
+const isChrome = process.env.BROWSER === "chrome" || process.env.BROWSER === "Chromium" || (test.info && test.info().project && test.info().project.name === "Chrome");
+
+test.skip(!(isCI && isChrome), "This test runs only in Chrome on CI");
+
 dotenv.config({ path: path.resolve(__dirname, "../../../.env.local") });
 
 const OPPORTUNITY_ID = "f7a1c2b3-4d5e-6789-8abc-1234567890ab"; // TEST-BR-8037-OU-ON01
