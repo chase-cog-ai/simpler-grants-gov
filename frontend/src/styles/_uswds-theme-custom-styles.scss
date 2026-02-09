@@ -599,17 +599,17 @@ dl {
 .simpler-responsive-table {
   min-width: 100%;
   thead {
+    display: none;
     @include at-media("tablet-lg") {
       display: table-header-group;
     }
-    display: none;
   }
   tr {
+    display: flex;
+    flex-direction: column;
     @include at-media("tablet-lg") {
       display: table-row;
     }
-    display: flex;
-    flex-direction: column;
   }
   tbody {
     td {
