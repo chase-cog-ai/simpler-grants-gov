@@ -53,8 +53,11 @@ test.describe("happy path apply workflow - Organization User (SF424B and SF-LLL)
     const modal = page.locator(
       '[role="dialog"].is-visible, #start-application.is-visible',
     );
-    // Debug: capture modal HTML and screenshot before expect
-    await modal.screenshot({ path: `modal-before-select.png` });
+    await modal.waitFor({ state: "visible", timeout: 15000 });
+    // Debug: capture modal HTML and screenshot before expect (only if visible)
+    if (await modal.isVisible()) {
+      await modal.screenshot({ path: "modal-before-select.png" });
+    }
     const modalHtml = await modal
       .innerHTML()
       .catch(() => "Could not get modal HTML");
@@ -66,8 +69,6 @@ test.describe("happy path apply workflow - Organization User (SF424B and SF-LLL)
       );
     }
     await expect(modal.locator("select")).toBeVisible({ timeout: 15000 });
-
-    // Step 6: Fill required fields in Start Application modal
     const orgSelect = modal.locator(
       'select[name*="applicant"], select:nth-of-type(1)',
     );
