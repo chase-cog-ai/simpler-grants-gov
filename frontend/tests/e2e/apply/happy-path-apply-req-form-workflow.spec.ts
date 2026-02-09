@@ -25,12 +25,20 @@ test.describe("happy path apply workflow - Organization User (SF424B and SF-LLL)
     await page.waitForTimeout(2000);
 
     // If a local test JWT is available, use it to log in directly
-    if (process.env.TEST_JWT) {
+    const quickLoginJwt =
+      process.env.TEST_JWT || process.env.E2E_USER_AUTH_TOKEN;
+    if (quickLoginJwt) {
       await page.request.post(`${BASE_URL}/api/user/local-quick-login`, {
-        data: { jwt: process.env.TEST_JWT },
+        data: { jwt: quickLoginJwt },
       });
       await page.reload();
       await page.waitForLoadState("domcontentloaded");
+      const sessionResponse = await page.request.get(
+        `${BASE_URL}/api/auth/session`,
+      );
+      if (!sessionResponse.ok()) {
+        throw new Error("Unable to establish user session after quick login.");
+      }
     }
 
     // Step 2: Use the test user dropdown to log in
