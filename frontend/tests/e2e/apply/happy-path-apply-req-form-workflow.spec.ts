@@ -2,11 +2,14 @@ import path from "path";
 import { expect, test } from "@playwright/test";
 import dotenv from "dotenv";
 
-// Only run this test in Chrome in CI
-const isCI = process.env.CI === "true";
-const isChrome = process.env.BROWSER === "chrome" || process.env.BROWSER === "Chromium" || (test.info && test.info().project && test.info().project.name === "Chrome");
 
-test.skip(!(isCI && isChrome), "This test runs only in Chrome on CI");
+// Only run this test in Chrome in CI
+test.describe('happy path apply workflow - Organization User (SF424B and SF-LLL)', () => {
+  test.beforeAll((testInfo) => {
+    const isCI = process.env.CI === "true";
+    const isChrome = testInfo.project.name === "Chrome";
+    test.skip(!(isCI && isChrome), "This test runs only in Chrome on CI");
+  });
 
 dotenv.config({ path: path.resolve(__dirname, "../../../.env.local") });
 
@@ -212,7 +215,10 @@ test("happy path apply workflow - Organization User (SF424B and SF-LLL)", async 
   if (!appIdMessage) {
     throw new Error("Could not find Application ID element");
   }
+
   expect(appIdMessage).toMatch(
     /Application ID #: [0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i,
   );
 });
+// Close the test.describe block
+}
