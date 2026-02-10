@@ -49,10 +49,7 @@ test.describe("happy path apply workflow - Organization User (SF424B and SF-LLL)
       await testUserSelect
         .first()
         .waitFor({ state: "visible", timeout: 10000 });
-      const options = await testUserSelect
-        .first()
-        .locator("option")
-        .all();
+      const options = await testUserSelect.first().locator("option").all();
       const optionValues: string[] = [];
       for (const option of options) {
         const value = await option.getAttribute("value");

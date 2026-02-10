@@ -82,9 +82,11 @@ jobs:
           set -a
           source .env.local
           set +a
-          echo "SESSION_SECRET=$SESSION_SECRET" >> $GITHUB_ENV
-          echo "E2E_USER_AUTH_TOKEN=$E2E_USER_AUTH_TOKEN" >> $GITHUB_ENV
-          printf 'API_JWT_PUBLIC_KEY<<EOF\n%s\nEOF\n' "$API_JWT_PUBLIC_KEY" >> $GITHUB_ENV
+          {
+            echo "SESSION_SECRET=$SESSION_SECRET"
+            echo "E2E_USER_AUTH_TOKEN=$E2E_USER_AUTH_TOKEN"
+            printf 'API_JWT_PUBLIC_KEY<<EOF\n%s\nEOF\n' "$API_JWT_PUBLIC_KEY"
+          } >> "$GITHUB_ENV"
 
       - name: Run Chrome apply required form test
         env:
