@@ -10,7 +10,7 @@ test("happy path apply workflow - Organization User (SF424B and SF-LLL)", async 
 
   // Step 1: Navigate to home page
   console.log("Step 1: Navigating to home page to establish session...");
-  await page.goto("http://localhost:3001");
+  await page.goto("http://localhost:3000");
   await page.waitForLoadState("domcontentloaded");
   await page.waitForTimeout(2000);
 
