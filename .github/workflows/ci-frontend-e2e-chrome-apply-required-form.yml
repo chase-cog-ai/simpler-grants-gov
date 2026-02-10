@@ -1,11 +1,11 @@
-name: Frontend E2E Chrome Apply Required Form
+name: Frontend E2E Tests
 on:
   workflow_dispatch:
   workflow_call:
   pull_request:
     paths:
       - frontend/**
-      - .github/workflows/ci-frontend-e2e-chrome-apply-required-form.yml
+      - .github/workflows/ci-frontend-e2e.yml
 
 defaults:
   run:
@@ -22,8 +22,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  e2e-chrome-apply-required-form:
-    name: Run Chrome Apply Required Form E2E
+  e2e-tests:
+    name: Run Local E2E Tests
     runs-on: ubuntu-22.04
 
     steps:
@@ -38,13 +38,7 @@ jobs:
           cache-dependency-path: ${{ env.LOCKFILE_PATH }}
 
       - name: Install dependencies and Playwright
-        # Workaround for npm ci EEXIST cache error:
-        # npm error code EEXIST
-        # Process exit code 239
-        # npm error path /home/runner/.npm/_cacache/tmp/1aaf648b
-        # Remove the existing file and try again, or run npm
         run: |
-          npm cache clean --force
           npm ci
           npx playwright install --with-deps
 
@@ -77,22 +71,11 @@ jobs:
           sed -i 's|^SENDY_API_URL=.*|SENDY_API_URL=http://127.0.0.1:3000|' .env.local
           npm run build -- --no-lint
 
-      - name: Export session secrets for web server
-        run: |
-          set -a
-          source .env.local
-          set +a
-          {
-            echo "SESSION_SECRET=$SESSION_SECRET"
-            echo "E2E_USER_AUTH_TOKEN=$E2E_USER_AUTH_TOKEN"
-            printf 'API_JWT_PUBLIC_KEY<<EOF\n%s\nEOF\n' "$API_JWT_PUBLIC_KEY"
-          } >> "$GITHUB_ENV"
-
-      - name: Run Chrome apply required form test
+      - name: Run only happy-path-apply-req-form-workflow spec
         env:
           CI: true
         run: |
-          npm run test:e2e -- --project=Chrome tests/e2e/apply/happy-path-apply-req-form-workflow.spec.ts
+          npx playwright test tests/e2e/apply/happy-path-apply-req-form-workflow.spec.ts
 
       - name: Debug logging on failure
         if: failure()
@@ -115,10 +98,16 @@ jobs:
           echo ""
         shell: bash
 
-      - name: Upload Playwright Report
+      - name: Verify Playwright Report Directory
+        if: always()
+        run: |
+          echo "Contents of playwright-report directory:"
+          ls -R playwright-report || echo "playwright-report directory not found"
+
+      - name: Upload Playwright HTML Report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: chrome-apply-required-form-report
-          path: /home/runner/work/simpler-grants-gov/simpler-grants-gov/frontend/playwright-report
-          retention-days: 7
+          name: playwright-html-report
+          path: frontend/playwright-report
+          retention-days: 30

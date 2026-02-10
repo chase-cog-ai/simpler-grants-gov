@@ -40,13 +40,7 @@ jobs:
           cache-dependency-path: ${{ env.LOCKFILE_PATH }}
 
       - name: Install dependencies and Playwright
-        # Workaround for npm ci EEXIST cache error:
-        # npm error code EEXIST
-        # Process exit code 239
-        # npm error path /home/runner/.npm/_cacache/tmp/1aaf648b
-        # Remove the existing file and try again, or run npm
         run: |
-          npm cache clean --force
           npm ci
           npx playwright install --with-deps
 
