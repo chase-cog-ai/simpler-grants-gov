@@ -1,11 +1,11 @@
-name: Frontend E2E Tests
+name: Frontend E2E Apply Tests
 on:
   workflow_dispatch:
   workflow_call:
   pull_request:
     paths:
       - frontend/**
-      - .github/workflows/ci-frontend-e2e.yml
+      - .github/workflows/ci-frontend-e2e-chrome-apply-required-form.yml
 
 defaults:
   run:

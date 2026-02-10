@@ -1,51 +1,73 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, Locator } from "@playwright/test";
+import playwrightEnv from "tests/e2e/playwright-env";
+import { createSpoofedSessionCookie } from "tests/e2e/loginUtils";
+import { performStagingLogin } from "tests/e2e/utils/perform-login-utils";
+import { openMobileNav, waitForURLChange } from "tests/e2e/playwrightUtils";
 
+const { targetEnv } = playwrightEnv;
 const OPPORTUNITY_ID = "f7a1c2b3-4d5e-6789-8abc-1234567890ab"; // TEST-BR-8037-OU-ON01
-const OPPORTUNITY_URL = `http://localhost:3001/opportunity/${OPPORTUNITY_ID}`;
+const OPPORTUNITY_URL = `/opportunity/${OPPORTUNITY_ID}`;
+
 
 test("happy path apply workflow - Organization User (SF424B and SF-LLL)", async ({
   page,
-}) => {
-  test.setTimeout(300000); // 5 minute timeout for this test
+  context,
+}, { project }) => {
+  test.setTimeout(300_000); // 5 min
 
-  // Step 1: Navigate to home page
-  console.log("Step 1: Navigating to home page to establish session...");
-  await page.goto("http://localhost:3000");
-  await page.waitForLoadState("domcontentloaded");
-  await page.waitForTimeout(2000);
+  const isMobile = project.name.match(/[Mm]obile/);
 
-  // Step 2: Use the test user dropdown to log in
-  // The frontend has a built-in test user selector for local development
-  // console.log("Step 2: Selecting test user 'many_app_user' from dropdown...");
-  console.log("Step 2: Selecting test user 'many_app_user' from dropdown...");
-  
-  // Find and click the test user dropdown (usually in the header)
-  const testUserSelect = page.locator('select[id*="test-user"], select[aria-label*="test-user"], combobox[aria-label*="test"]');
-  if (await testUserSelect.count() > 0) {
-    await testUserSelect.first().waitFor({ state: "visible", timeout: 10000 });
+  // Step 1: Navigate to home page and log in
+  console.log("Step 1: Navigating to home page and logging in...");
+
+  if (targetEnv === "local") {
+    // Use test-user spoofing
+    await createSpoofedSessionCookie(context);
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    console.log("✓ Local test user session established");
+
+    // Fallback: use test-user dropdown if present
+  const testUserSelect = page.locator(
+    'select[id*="test-user"], select[aria-label*="test-user"], combobox[aria-label*="test"]'
+    );
+  if ((await testUserSelect.count()) > 0) {
+    await testUserSelect.first().waitFor({ state: "visible", timeout: 10_000 });
     await testUserSelect.first().selectOption("many_app_user");
-    await page.waitForTimeout(2000); // Wait for session to be established
-    console.log("✓ Test user selected");
+    await page.waitForTimeout(2_000); // wait for session
+    console.log("✓ Test user selected via dropdown fallback");
+    } else {
+    console.log("ℹ No test user dropdown found - proceeding with cookie session");
+    }
+  } else if (targetEnv === "staging") {
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    const signOutButton = await performStagingLogin(page, !!isMobile);
+    if (!signOutButton) {
+      throw new Error("signOutButton was not found after performStagingLogin");
+    }
+    await expect(signOutButton).toHaveCount(1, { timeout: 120_000 });
+    console.log("✓ Staging user logged in");
   } else {
-    console.log("ℹ No test user dropdown found - proceeding without explicit selection");
+    throw new Error(`Unsupported env ${targetEnv}`);
+  }
+
+   // Step 2: Open mobile nav if needed
+  if (isMobile) {
+    await openMobileNav(page);
   }
 
   // Step 3: Navigate to opportunity page
   console.log("Step 3: Navigating to opportunity page...");
-  await page.goto(OPPORTUNITY_URL);
-  await page.waitForLoadState("domcontentloaded");
+  await page.goto(OPPORTUNITY_URL, { waitUntil: "domcontentloaded" });
   await page.waitForTimeout(3000); // Wait for page to fully load
 
   console.log("✓ Opportunity page loaded!");
 
-  // Step 4: Click "Start new application" button
+  // Step 4: Click "Start new application"
   console.log("Step 4: Clicking 'Start new application' button...");
-  const startAppButton = page.getByRole("button", {
-    name: /start.*application/i,
-  });
-  await startAppButton.waitFor({ state: "visible", timeout: 15000 });
+  const startAppButton = page.getByRole("button", { name: /start.*application/i });
+  await startAppButton.waitFor({ state: "visible", timeout: 15_000 });
   await startAppButton.click();
-  console.log("Button clicked");
+  console.log("✓ 'Start new application' clicked");
 
   // Step 5: Wait for the Start Application modal to appear
   console.log("Step 5: Waiting for Start Application modal...");
