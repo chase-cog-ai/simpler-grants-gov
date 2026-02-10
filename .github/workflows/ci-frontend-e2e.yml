@@ -6,7 +6,7 @@ on:
   pull_request:
     paths:
       - frontend/**
-      - .github/workflows/ci-frontend-e2e-chrome-apply-required-form.yml
+      - .github/workflows/ci-frontend-e2e.yml
 
 defaults:
   run:
